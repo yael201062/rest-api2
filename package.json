@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon ./src/app.ts",
     "start": "cp .env tsc && node ./dist/app.js",
     "test": "cp .env jest && --detectOpenHandles --forceExit --runInBand",
     "testAuth": "cp .env && jest --detectOpenHandles --forceExit auth.test.ts",
