@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cp .env tsc && node ./dist/app.js",
+    "test": "cp .env jest && --detectOpenHandles --forceExit --runInBand",
+    "testAuth": "cp .env && jest --detectOpenHandles --forceExit auth.test.ts",
+    "testPost": "cp .env && jest --detectOpenHandles --forceExit posts.test.ts",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [],
   "author": "",
