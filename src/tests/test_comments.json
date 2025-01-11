@@ -1,0 +1,18 @@
+
+[
+    {
+        "comment": "This is a comment",
+        "owner": "Yael",
+        "postId": "safgsefdgsdfgsd"
+    },
+    {
+        "comment": "This is another comment",
+        "owner": "Sharon",
+        "postId": "safgsefdgsdfgsd"
+    },
+    {
+        "comment": "This is another comment",
+        "owner": "Mor",
+        "postId": "safgsefdgsdfgsd"
+    }
+]
