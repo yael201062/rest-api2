@@ -17,12 +17,16 @@ beforeAll(async () => {
   console.log("beforeAll");
   app = await initApp();
   await postModel.deleteMany();
-
   await userModel.deleteMany();
-  await request(app).post("/auth/register").send(testUser);
-  const res = await request(app).post("/auth/login").send(testUser);
-  testUser.token = res.body.token;
-  testUser._id = res.body._id;
+
+  const registerResponse = await request(app).post("/auth/register").send(testUser);
+  expect(registerResponse.statusCode).toBe(200);
+
+  const loginResponse = await request(app).post("/auth/login").send(testUser);
+  expect(loginResponse.statusCode).toBe(200);
+
+  testUser.token = loginResponse.body.token;
+  testUser._id = loginResponse.body._id;
   expect(testUser.token).toBeDefined();
 });
 
@@ -41,18 +45,20 @@ describe("Posts Tests", () => {
   });
 
   test("Test Create Post", async () => {
-    const response = await request(app).post("/posts")
-      .set({ authorization: "JWT " + testUser.token })
+    const response = await request(app)
+      .post("/posts")
+      .set("Authorization", `Bearer ${testUser.token}`) // בדקי אם השרת מצפה ל-Bearer
       .send({
         title: "Test Post",
         content: "Test Content",
-        owner: "TestOwner",
+        owner: testUser._id,
       });
     expect(response.statusCode).toBe(201);
     expect(response.body.title).toBe("Test Post");
     expect(response.body.content).toBe("Test Content");
     postId = response.body._id;
   });
+  
 
   test("Test get post by owner", async () => {
     const response = await request(app).get("/posts?owner=" + testUser._id);
@@ -87,16 +93,19 @@ describe("Posts Tests", () => {
   });
 
   test("Test Delete Post", async () => {
-    const response = await request(app).delete("/posts/" + postId)
-      .set({ authorization: "JWT " + testUser.token });
+    const response = await request(app)
+      .delete(`/posts/${postId}`)
+      .set("Authorization", `JWT ${testUser.token}`);
     expect(response.statusCode).toBe(200);
-    const response2 = await request(app).get("/posts/" + postId);
+  
+    const response2 = await request(app).get(`/posts/${postId}`);
     expect(response2.statusCode).toBe(404);
   });
 
   test("Test Create Post fail", async () => {
-    const response = await request(app).post("/posts")
-      .set({ authorization: "JWT " + testUser.token })
+    const response = await request(app)
+      .post("/posts")
+      .set("Authorization", `JWT ${testUser.token}`)
       .send({
         content: "Test Content 2",
       });

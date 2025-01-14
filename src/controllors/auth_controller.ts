@@ -4,6 +4,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Document } from 'mongoose';
 
+type Payload = {
+    exp: number;
+    _id: string;
+};
+
 // Registration
 const register = async (req: Request, res: Response) => {
     try {
@@ -25,24 +30,25 @@ type tTokens = {
 
 const generateToken = (userId: string): tTokens | null => {
     if (!process.env.TOKEN_SECRET) {
-        return null;
+      return null;
     }
-
+  
     const random = Math.random().toString();
     const accessToken = jwt.sign(
-        { _id: userId, random },
-        process.env.TOKEN_SECRET,
-        { expiresIn: process.env.TOKEN_EXPIRES }
+      { _id: userId, random },
+      process.env.TOKEN_SECRET,
+      { expiresIn: process.env.TOKEN_EXPIRES || '1h' }
     );
-
+  
     const refreshToken = jwt.sign(
-        { _id: userId, random },
-        process.env.TOKEN_SECRET,
-        { expiresIn: process.env.REFRESH_TOKEN_EXPIRES }
+      { _id: userId, random },
+      process.env.TOKEN_SECRET,
+      { expiresIn: process.env.REFRESH_TOKEN_EXPIRES || '7d' }
     );
-
+  
     return { accessToken, refreshToken };
-};
+  };
+
 
 // Login
 const login = async (req: Request, res: Response) => {
@@ -85,38 +91,44 @@ type tUser = Document<unknown, {}, IUser> & IUser & Required<{ _id: string }> & 
 
 const verifyRefreshToken = async (refreshToken: string | undefined): Promise<tUser | null> => {
     return new Promise<tUser | null>((resolve, reject) => {
-        if (!refreshToken) {
-            return reject('fail');
+      if (!refreshToken) {
+        return reject('fail');
+      }
+  
+      if (!process.env.TOKEN_SECRET) {
+        return reject('fail');
+      }
+  
+      jwt.verify(refreshToken, process.env.TOKEN_SECRET, async (err: any, payload: any) => {
+        if (err) {
+          return reject('fail');
         }
-
-        if (!process.env.TOKEN_SECRET) {
-            return reject('fail');
+  
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (payload.exp < currentTime) {
+          return reject('fail');
         }
-
-        jwt.verify(refreshToken, process.env.TOKEN_SECRET, async (err: any, payload: any) => {
-            if (err) {
-                return reject('fail');
-            }
-
-            const userId = payload._id;
-            try {
-                const user = await userModel.findById(userId);
-                if (!user || !user.refreshToken || !user.refreshToken.includes(refreshToken)) {
-                    if (user) user.refreshToken = [];
-                    await user?.save();
-                    return reject('fail');
-                }
-
-                // Remove the used refresh token
-                user.refreshToken = user.refreshToken.filter((token) => token !== refreshToken);
-                await user.save();
-                resolve(user);
-            } catch (err) {
-                reject('fail');
-            }
-        });
+  
+        const userId = payload._id;
+        try {
+          const user = await userModel.findById(userId);
+          if (!user || !user.refreshToken || !user.refreshToken.includes(refreshToken)) {
+            if (user) user.refreshToken = [];
+            await user?.save();
+            return reject('fail');
+          }
+  
+          // Remove the used refresh token
+          user.refreshToken = user.refreshToken.filter((token) => token !== refreshToken);
+          await user.save();
+          resolve(user);
+        } catch (err) {
+          reject('fail');
+        }
+      });
     });
-};
+  };
+
 
 // Logout
 const logout = async (req: Request, res: Response) => {
@@ -162,31 +174,32 @@ const refresh = async (req: Request, res: Response) => {
 };
 
 // Authentication Middleware
-type Payload = {
-    _id: string;
-};
-
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const authorization = req.header('authorization');
     const token = authorization && authorization.split(' ')[1];
-
+  
     if (!token) {
-        return res.status(401).send('Access Denied');
+      return res.status(401).send('Access Denied');
     }
-
+  
     if (!process.env.TOKEN_SECRET) {
-        return res.status(500).send('Server Error');
+      return res.status(500).send('Server Error');
     }
-
+  
     jwt.verify(token, process.env.TOKEN_SECRET, (err, payload) => {
-        if (err) {
-            return res.status(401).send('Access Denied');
-        }
-
-        req.params.userId = (payload as Payload)._id;
-        next();
+      if (err) {
+        return res.status(401).send('Access Denied');
+      }
+  
+      const currentTime = Math.floor(Date.now() / 1000);
+      if ((payload as Payload).exp < currentTime) {
+        return res.status(401).send('Token Expired');
+      }
+  
+      req.params.userId = (payload as Payload)._id;
+      next();
     });
-};
+  };
 
 export default {
     register,

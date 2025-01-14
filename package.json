@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon ./src/app.ts",
-    "start": "cp .env tsc && node ./dist/app.js",
-    "test": "cp .env jest && --detectOpenHandles --forceExit --runInBand",
-    "testAuth": "cp .env && jest --detectOpenHandles --forceExit auth.test.ts",
-    "testPost": "cp .env && jest --detectOpenHandles --forceExit posts.test.ts",
-    "lint": "eslint . --ext .ts"
-  },
+  "dev": "nodemon ./src/app.ts",
+  "start": "cp .env tsc && node ./dist/app.js",
+  "test": "jest --detectOpenHandles --forceExit --runInBand",
+  "testAuth": "jest --detectOpenHandles --forceExit src/tests/auth_test.ts",
+  "testPost": "jest --detectOpenHandles --forceExit src/tests/post_test.ts",
+  "lint": "eslint . --ext .ts"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -40,5 +40,14 @@
     "mongoose": "^8.9.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
-  }
+  },
+  "jest": {
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/src"],
+  "testMatch": ["**/tests/**/*_test.ts", "**/tests/**/*.test.ts", "**/tests/**/*.spec.ts"],
+  "testPathIgnorePatterns": ["/node_modules/"],
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
+  "verbose": true
+}
 }
