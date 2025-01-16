@@ -25,9 +25,9 @@ beforeAll(async () => {
   const loginResponse = await request(app).post("/auth/login").send(testUser);
   expect(loginResponse.statusCode).toBe(200);
 
-  testUser.accessToken = loginResponse.body.accessToken;
+  testUser.accessToken = loginResponse.body.accessToken; // תיקון כאן
   testUser._id = loginResponse.body._id;
-  expect(testUser.accessToken).toBeDefined();
+  expect(testUser.accessToken).toBeDefined(); // תיקון כאן
 });
 
 afterAll((done) => {
@@ -47,7 +47,7 @@ describe("Posts Tests", () => {
   test("Test Create Post", async () => {
     const response = await request(app)
       .post("/posts")
-      .set("Authorization", `Bearer ${testUser.accessToken}`)
+      .set("Authorization", `Bearer ${testUser.accessToken}`) // תיקון כאן
       .send({
         title: "Test Post",
         content: "Test Content",
@@ -76,7 +76,7 @@ describe("Posts Tests", () => {
 
   test("Test Create Post 2", async () => {
     const response = await request(app).post("/posts")
-      .set({ authorization: "Bearer " + testUser.accessToken })
+      .set({ authorization: "Bearer " + testUser.accessToken }) // תיקון כאן
       .send({
         title: "Test Post 2",
         content: "Test Content 2",
@@ -94,7 +94,7 @@ describe("Posts Tests", () => {
   test("Test Delete Post", async () => {
     const response = await request(app)
       .delete(`/posts/${postId}`)
-      .set("Authorization", `Bearer ${testUser.accessToken}`);
+      .set("Authorization", `Bearer ${testUser.accessToken}`); // תיקון כאן
     expect(response.statusCode).toBe(200);
 
     const response2 = await request(app).get(`/posts/${postId}`);
@@ -104,7 +104,7 @@ describe("Posts Tests", () => {
   test("Test Create Post fail", async () => {
     const response = await request(app)
       .post("/posts")
-      .set("Authorization", `Bearer ${testUser.accessToken}`)
+      .set("Authorization", `Bearer ${testUser.accessToken}`) // תיקון כאן
       .send({
         content: "Test Content 2",
       });
