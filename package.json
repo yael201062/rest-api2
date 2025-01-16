@@ -48,6 +48,8 @@
   "testMatch": ["**/tests/**/*_test.ts", "**/tests/**/*.test.ts", "**/tests/**/*.spec.ts"],
   "testPathIgnorePatterns": ["/node_modules/"],
   "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
-  "verbose": true
+  "verbose": true,
+  "coverageDirectory": "C:/Users/Dell/Desktop/מכללה/פיתוח אפליקציות אינטרנטיות/rest-api2/rest-api2/coverage"
+
 }
 }
