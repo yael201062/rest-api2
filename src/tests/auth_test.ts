@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import postModel from "../models/post_model";
 import { Express } from "express";
 import userModel, { IUser } from "../models/user_model";
+import jwt from 'jsonwebtoken';
 
 var app: Express;
 
@@ -30,7 +31,7 @@ type User = IUser & {
 const testUser: User = {
   email: "test@user.com",
   password: "testpassword",
-}
+};
 
 describe("Auth Tests", () => {
   test("Auth test register", async () => {
@@ -38,21 +39,19 @@ describe("Auth Tests", () => {
     expect(response.statusCode).toBe(200);
   });
 
-  test("Auth test register fail", async () => {
+  test("Auth test register with existing email", async () => {
     const response = await request(app).post(baseUrl + "/register").send(testUser);
-    expect(response.statusCode).not.toBe(200);
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("Email already exists");
   });
 
-  test("Auth test register fail", async () => {
+  test("Auth test register with invalid password", async () => {
     const response = await request(app).post(baseUrl + "/register").send({
-      email: "sdsdfsd",
+      email: "test2@user.com",
+      password: "short",
     });
-    expect(response.statusCode).not.toBe(200);
-    const response2 = await request(app).post(baseUrl + "/register").send({
-      email: "",
-      password: "sdfsd",
-    });
-    expect(response2.statusCode).not.toBe(200);
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("Password must be at least 6 characters long");
   });
 
   test("Auth test login", async () => {
@@ -68,6 +67,24 @@ describe("Auth Tests", () => {
     testUser._id = response.body._id;
   });
 
+  test("Auth test login with non-existent email", async () => {
+    const response = await request(app).post(baseUrl + "/login").send({
+      email: "nonexistent@user.com",
+      password: "testpassword",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("Wrong username or password");
+  });
+
+  test("Auth test login with wrong password", async () => {
+    const response = await request(app).post(baseUrl + "/login").send({
+      email: testUser.email,
+      password: "wrongpassword",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("Wrong username or password");
+  });
+
   test("Check tokens are not the same", async () => {
     const response = await request(app).post(baseUrl + "/login").send(testUser);
     const accessToken = response.body.accessToken;
@@ -75,20 +92,6 @@ describe("Auth Tests", () => {
 
     expect(accessToken).not.toBe(testUser.accessToken);
     expect(refreshToken).not.toBe(testUser.refreshToken);
-  });
-
-  test("Auth test login fail", async () => {
-    const response = await request(app).post(baseUrl + "/login").send({
-      email: testUser.email,
-      password: "sdfsd",
-    });
-    expect(response.statusCode).not.toBe(200);
-
-    const response2 = await request(app).post(baseUrl + "/login").send({
-      email: "dsfasd",
-      password: "sdfsd",
-    });
-    expect(response2.statusCode).not.toBe(200);
   });
 
   test("Auth test me", async () => {
@@ -117,6 +120,27 @@ describe("Auth Tests", () => {
     expect(response.body.refreshToken).toBeDefined();
     testUser.accessToken = response.body.accessToken;
     testUser.refreshToken = response.body.refreshToken;
+  });
+
+  test("Test refresh token with invalid token", async () => {
+    const response = await request(app).post(baseUrl + "/refresh").send({
+      refreshToken: "invalidtoken",
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("fail");
+  });
+
+  test("Test refresh token with expired token", async () => {
+    const expiredToken = jwt.sign(
+      { _id: testUser._id, random: Math.random().toString() },
+      process.env.TOKEN_SECRET || "default_secret",
+      { expiresIn: "0s" }
+    );
+    const response = await request(app).post(baseUrl + "/refresh").send({
+      refreshToken: expiredToken,
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.message).toBe("fail");
   });
 
   test("Double use refresh token", async () => {
@@ -152,7 +176,6 @@ describe("Auth Tests", () => {
       refreshToken: testUser.refreshToken,
     });
     expect(response3.statusCode).not.toBe(200);
-
   });
 
   jest.setTimeout(10000);

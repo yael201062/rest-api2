@@ -13,12 +13,22 @@ type Payload = {
 const register = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
+
+        const existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already exists" });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters long" });
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         const user = await userModel.create({ email, password: hashedPassword });
         res.status(200).send(user);
     } catch (err) {
-        res.status(400).send(err);
+        res.status(400).json({ message: "Registration failed", error: err });
     }
 };
 
@@ -57,17 +67,17 @@ const login = async (req: Request, res: Response) => {
         const user = await userModel.findOne({ email });
 
         if (!user) {
-            return res.status(400).send('Wrong username or password');
+            return res.status(400).json({ message: "Wrong username or password" });
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(400).send('Wrong username or password');
+            return res.status(400).json({ message: "Wrong username or password" });
         }
 
         const tokens = generateToken(user._id);
         if (!tokens) {
-            return res.status(500).send('Server Error');
+            return res.status(500).json({ message: "Server Error" });
         }
 
         if (!user.refreshToken) {
@@ -82,7 +92,7 @@ const login = async (req: Request, res: Response) => {
             _id: user._id
         });
     } catch (err) {
-        res.status(400).send(err);
+        res.status(400).json({ message: "Login failed", error: err });
     }
 };
 
@@ -149,12 +159,12 @@ const refresh = async (req: Request, res: Response) => {
     try {
         const user = await verifyRefreshToken(req.body.refreshToken);
         if (!user) {
-            return res.status(400).send('fail');
+            return res.status(400).json({ message: "fail" });
         }
 
         const tokens = generateToken(user._id);
         if (!tokens) {
-            return res.status(500).send('Server Error');
+            return res.status(500).json({ message: "Server Error" });
         }
 
         if (!user.refreshToken) {
@@ -169,7 +179,7 @@ const refresh = async (req: Request, res: Response) => {
             _id: user._id
         });
     } catch (err) {
-        res.status(400).send('fail');
+        res.status(400).json({ message: "fail" });
     }
 };
 

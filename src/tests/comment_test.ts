@@ -74,20 +74,20 @@ describe("Comments Tests", () => {
     commentId = response.body._id;
   });
 
-  test("Test get comment by owner", async () => {
-    const response = await request(app).get("/comments?owner=" + testUser._id);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.length).toBe(1);
-    expect(response.body[0].comment).toBe("This is a comment");
-    expect(response.body[0].postId).toBe(postId); 
-    expect(response.body[0].owner).toBe(testUser._id);
-  });
+test("Test get comment by owner", async () => {
+  const response = await request(app).get("/comments?owner=" + testUser._id);
+  expect(response.statusCode).toBe(200);
+  expect(response.body.length).toBe(1);
+  expect(response.body[0].comment).toBe("This is a comment");
+  expect(response.body[0].postId).toBe(postId);
+  expect(response.body[0].owner).toBe(testUser._id);
+});
 
-  test("Comments get post by id", async () => {
-    const response = await request(app).get("/comments/" + commentId);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.comment).toBe("This is a comment");
-    expect(response.body.postId).toBe(postId);
-    expect(response.body.owner).toBe(testUser._id);
-  });
+test("Comments get post by id", async () => {
+  const response = await request(app).get("/comments/" + commentId);
+  expect(response.statusCode).toBe(200);
+  expect(response.body.comment).toBe("This is a comment");
+  expect(response.body.postId).toBe(postId);
+  expect(response.body.owner).toBe(testUser._id);
+});
 });
